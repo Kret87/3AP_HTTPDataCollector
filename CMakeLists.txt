@@ -16,6 +16,7 @@ add_executable(
     src/HttpClient.cpp
     src/Database.cpp
     src/Configuration.cpp
+    src/PollScheduler.cpp
 )
 
 target_include_directories(

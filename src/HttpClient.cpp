@@ -34,6 +34,14 @@ std::string HttpClient::get(const std::string& url,
                      networkInterface.c_str());
 
     curl_easy_setopt(curl,
+                 CURLOPT_CONNECTTIMEOUT,
+                 3L);
+
+    curl_easy_setopt(curl,
+                 CURLOPT_TIMEOUT,
+                 5L);
+
+    curl_easy_setopt(curl,
                      CURLOPT_WRITEFUNCTION,
                      writeCallback);
 
