@@ -17,6 +17,7 @@ add_executable(
     src/Database.cpp
     src/Configuration.cpp
     src/PollScheduler.cpp
+    src/LicenseManager.cpp
 )
 
 target_include_directories(
