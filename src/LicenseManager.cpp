@@ -22,7 +22,7 @@ bool LicenseManager::verifyLicense(){
     std::string deviceID;
     file >> deviceID;
     
-    if(!(deviceID == getDeviceSerial()))
+    if(deviceID != getDeviceSerial())
         return false;
         
     return true;

@@ -1,7 +1,9 @@
 #include "Database.h"
-#include <iostream>
+
 #include <algorithm>
 #include <cctype>
+#include <iostream>
+#include <sstream>
 
 Database::Database()
     : connection_(nullptr)
@@ -43,20 +45,18 @@ bool Database::initialize()
     {
         pqxx::work transaction(*connection_);
 
-	std::string sql =
-    	"CREATE TABLE IF NOT EXISTS " + tableName_ + R"(
-	(
-   	 id BIGSERIAL PRIMARY KEY,
+        std::string sql =
+            "CREATE TABLE IF NOT EXISTS " + tableName_ + R"(
+(
+    id BIGSERIAL PRIMARY KEY,
 
-    	sample_time TIMESTAMPTZ NOT NULL,
+    sample_time TIMESTAMPTZ NOT NULL,
 
-    	variable TEXT NOT NULL,
+    values DOUBLE PRECISION[] NOT NULL
+);
+)";
 
-    	value DOUBLE PRECISION NOT NULL
-	);
-	)";
-
-transaction.exec(sql);
+        transaction.exec(sql);
 
         transaction.commit();
 
@@ -64,7 +64,7 @@ transaction.exec(sql);
 
         return true;
     }
-    catch(const std::exception& ex)
+    catch (const std::exception& ex)
     {
         std::cerr << ex.what() << '\n';
 
@@ -76,12 +76,12 @@ std::string Database::getCurrentTimestamp()
 {
     pqxx::work transaction(*connection_);
 
-pqxx::result result =
-    transaction.exec(
-        "SELECT CURRENT_TIMESTAMP::text");
+    pqxx::result result =
+        transaction.exec(
+            "SELECT CURRENT_TIMESTAMP::text");
 
-std::string timestamp =
-    result[0][0].as<std::string>();
+    std::string timestamp =
+        result[0][0].as<std::string>();
 
     transaction.commit();
 
@@ -103,34 +103,44 @@ void Database::setDeviceId(const std::string& deviceId)
     }
 }
 
-bool Database::insert(const std::string& variable,
-                      double value,
+bool Database::insert(const std::vector<double>& values,
                       const std::string& sampleTime)
 {
     try
     {
+        std::ostringstream array;
+
+        array << '{';
+
+        for (std::size_t i = 0; i < values.size(); ++i)
+        {
+            if (i > 0)
+                array << ',';
+
+            array << values[i];
+        }
+
+        array << '}';
+
         pqxx::work transaction(*connection_);
 
         std::string sql =
             "INSERT INTO " + tableName_ + R"(
 (
     sample_time,
-    variable,
-    value
+    values
 )
 VALUES
 (
     $1,
-    $2,
-    $3
+    $2
 );
 )";
 
         transaction.exec_params(
             sql,
             sampleTime,
-            variable,
-            value);
+            array.str());
 
         transaction.commit();
 

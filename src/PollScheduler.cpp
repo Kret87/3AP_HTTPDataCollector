@@ -3,10 +3,25 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <vector>
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
+
+namespace
+{
+    void decodeHtmlEntities(std::string& text)
+    {
+        std::size_t pos = 0;
+
+        while ((pos = text.find("&#x2d;", pos)) != std::string::npos)
+        {
+            text.replace(pos, 6, "-");
+            ++pos;
+        }
+    }
+}
 
 void PollScheduler::run(const Configuration& configuration,
                         HttpClient& httpClient,
@@ -48,6 +63,8 @@ void PollScheduler::run(const Configuration& configuration,
                         endpoint.url,
                         endpoint.networkInterface);
 
+                decodeHtmlEntities(response);
+
                 json j = json::parse(response);
 
                 std::string deviceId =
@@ -61,21 +78,20 @@ void PollScheduler::run(const Configuration& configuration,
                 std::string sampleTime =
                     database.getCurrentTimestamp();
 
-                for (auto& variable : j["values"].items())
+                std::vector<double> values;
+
+                for (const auto& value : j["values"])
                 {
-                    double value = variable.value();
+                    double number = value.get<double>();
 
                     std::cout
-                        << variable.key()
-                        << " = "
-                        << value
+                        << number
                         << '\n';
 
-                    database.insert(
-                        variable.key(),
-                        value,
-                        sampleTime);
+                    values.push_back(number);
                 }
+
+                database.insert(values, sampleTime);
             }
             catch (const std::exception& ex)
             {

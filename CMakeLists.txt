@@ -23,7 +23,8 @@ add_executable(
 target_include_directories(
     3AP_HTTPDataCollector
     PRIVATE
-    ${PQXX_INCLUDE_DIRS}
+        third_party
+        ${PQXX_INCLUDE_DIRS}
 )
 
 target_link_directories(
@@ -38,3 +39,4 @@ target_link_libraries(
     CURL::libcurl
     ${PQXX_LIBRARIES}
 )
+
